@@ -189,6 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Enable download button
             resizedImageUrl = imageData;
             downloadBtn.disabled = false;
+
+            // Update size display
+            updateResizedSize(imageData);
         }
 
         return imageData;
@@ -203,7 +206,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateFileInfo(file) {
         const sizeInKB = (file.size / 1024).toFixed(2);
-        fileInfo.textContent = `Original: ${file.name} (${sizeInKB} KB, ${originalWidth}×${originalHeight}px)`;
+        fileInfo.textContent = `Original: ${file.name}`;
+        document.getElementById('originalSize').textContent = `Size: ${sizeInKB} KB`;
+        document.getElementById('originalDimensions').textContent = `Dimensions: ${originalWidth}×${originalHeight}px`;
+    }
+
+    function updateResizedSize(base64) {
+        const sizeInBytes = (base64.length * 3) / 4 - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+        const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+        const width = parseInt(widthInput.value) || originalWidth;
+        const height = parseInt(heightInput.value) || originalHeight;
+        document.getElementById('resizedSize').textContent = `Size: ${sizeInKB} KB`;
+        document.getElementById('resizedDimensions').textContent = `Dimensions: ${width}×${height}px`;
+        return sizeInBytes;
     }
 
     function downloadResizedImage() {
