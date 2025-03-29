@@ -232,6 +232,74 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(link);
     }
 
+    // PDF Dropzone handlers
+    pdfDropzone.addEventListener('click', () => pdfInput.click());
+    pdfDropzone.addEventListener('dragover', handleDragOver);
+    pdfDropzone.addEventListener('dragleave', handleDragLeave);
+    pdfDropzone.addEventListener('drop', handlePdfDrop);
+    pdfInput.addEventListener('change', handlePdfSelect);
+
+    function handlePdfDrop(e) {
+        e.preventDefault();
+        pdfDropzone.classList.remove('active');
+        if (e.dataTransfer.files.length) {
+            pdfInput.files = e.dataTransfer.files;
+            handlePdfSelect({ target: pdfInput });
+        }
+    }
+
+    function handlePdfSelect(e) {
+        const file = e.target.files[0];
+        if (!file || !file.name.endsWith('.pdf')) {
+            alert('Please select a PDF file');
+            return;
+        }
+
+        pdfInfo.textContent = `Selected: ${file.name} (${(file.size/1024).toFixed(2)} KB)`;
+        convertBtn.disabled = false;
+    }
+
+    // PDF to Word conversion
+    convertBtn.addEventListener('click', async function() {
+        if (!pdfInput.files.length) return;
+        
+        const pdfFile = pdfInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                const pdfBytes = new Uint8Array(e.target.result);
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const textContent = await extractTextFromPDF(pdfDoc);
+                saveAsDocx(textContent, pdfFile.name.replace('.pdf', '.docx'));
+            } catch (error) {
+                alert('Error converting PDF: ' + error.message);
+            }
+        };
+        reader.readAsArrayBuffer(pdfFile);
+    });
+
+    async function extractTextFromPDF(pdfDoc) {
+        const pages = pdfDoc.getPages();
+        let text = '';
+        for (const page of pages) {
+            text += await page.getTextContent();
+        }
+        return text;
+    }
+
+    function saveAsDocx(content, filename) {
+        const blob = new Blob([content], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+        saveAs(blob, filename);
+    }
+
+    resetPdfBtn.addEventListener('click', function() {
+        pdfInput.value = '';
+        pdfInfo.textContent = '';
+        convertBtn.disabled = true;
+        pdfDropzone.classList.remove('active');
+    });
+
     function resetTool() {
         fileInput.value = '';
         originalImage = null;
